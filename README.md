@@ -231,6 +231,7 @@ python scripts/train_dpo.py --model checkpoints/sft --use-peft
 Install the extras that match the path you want:
 
 ```bash
+pip install -r requirements.txt
 pip install -e .[hosted]
 pip install -e .[train]
 pip install -e .[full]

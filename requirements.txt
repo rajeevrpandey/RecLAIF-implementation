@@ -1,0 +1,16 @@
+# Core package (editable local install)
+-e .
+
+# Hosted inference backend
+openai>=1.0.0
+
+# Training + local inference stack
+datasets>=2.20.0
+peft>=0.12.0
+torch>=2.1.0
+transformers>=4.45.0
+trl>=0.17.0
+
+# Reproducibility / evaluation helpers
+numpy>=1.26.0
+pandas>=2.2.0
