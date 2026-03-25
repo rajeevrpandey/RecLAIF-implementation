@@ -24,10 +24,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-length", type=int, default=1024)
     parser.add_argument("--max-prompt-length", type=int, default=768)
     parser.add_argument("--beta", type=float, default=0.1)
+    parser.add_argument("--reference-model", help="Reference model for DPO.")
     parser.add_argument("--use-peft", action="store_true")
     parser.add_argument("--bf16", action="store_true")
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--resume-from-checkpoint")
+    parser.add_argument("--seed", type=int, default=7)
     return parser.parse_args()
 
 
@@ -44,10 +46,12 @@ def main() -> None:
         max_length=args.max_length,
         max_prompt_length=args.max_prompt_length,
         beta=args.beta,
+        reference_model_name_or_path=args.reference_model,
         use_peft=args.use_peft,
         bf16=args.bf16,
         fp16=args.fp16,
         resume_from_checkpoint=args.resume_from_checkpoint,
+        seed=args.seed,
     )
     output_dir = train_dpo_from_jsonl(config)
     print(f"DPO training finished. Checkpoint saved to: {output_dir}")

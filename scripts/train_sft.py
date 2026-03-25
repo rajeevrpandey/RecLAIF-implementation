@@ -26,6 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bf16", action="store_true")
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--resume-from-checkpoint")
+    parser.add_argument("--seed", type=int, default=7)
     return parser.parse_args()
 
 
@@ -44,6 +45,7 @@ def main() -> None:
         bf16=args.bf16,
         fp16=args.fp16,
         resume_from_checkpoint=args.resume_from_checkpoint,
+        seed=args.seed,
     )
     output_dir = train_sft_from_jsonl(config)
     print(f"SFT training finished. Checkpoint saved to: {output_dir}")

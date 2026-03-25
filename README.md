@@ -34,6 +34,7 @@ data/
 scripts/
   evaluate_pairs.py
   prepare_dataset_splits.py
+  run_iterative_dpo.py
   run_mock_pipeline.py
   run_pipeline.py
   show_experiment_config.py
@@ -49,6 +50,7 @@ src/reclaif/
   parsers.py
   pipeline.py
   prompts.py
+  runner.py
   schemas.py
   training.py
 ```
@@ -131,6 +133,20 @@ The repo now includes a lightweight evaluator for generated preference pairs:
 
 ### 7. Real backends and actual training
 
+### 8. Automated Iter1..Iter4 loop with lineage (Priority B)
+
+The repo includes an automated iterative runner in `src/reclaif/runner.py` and
+CLI entrypoint `scripts/run_iterative_dpo.py`:
+
+- Iter0: teacher-driven SFT data generation and optional SFT training
+- Iter1..IterN: preference pair generation + optional DPO training
+- explicit checkpoint lineage written to `run_manifest.json`
+- deterministic run controls:
+  - seed propagation
+  - fixed prompt version from experiment config
+  - version-locked model IDs and sampling/training hyperparameters from config
+  - reference-model handling for DPO (`reference_model_name_or_path`)
+
 The repo now includes:
 
 - hosted inference clients in [`src/reclaif/llm.py`](/C:/Users/rrpte/Documents/New%20project/src/reclaif/llm.py)
@@ -179,6 +195,7 @@ The trainer code assumes the standard TRL dataset shapes:
 ```bash
 python scripts/show_experiment_config.py --config configs/experiments/beauty.v1.json
 python scripts/prepare_dataset_splits.py --dataset-root data --dataset beauty --output-dir prepared_data --policy random_from_catalog --k 50 --seed 7
+python scripts/run_iterative_dpo.py --config configs/experiments/beauty.v1.json --dataset-root data --output-dir runs/beauty --dry-run
 python scripts/run_pipeline.py --recommender-backend transformers --recommender-model mistralai/Mistral-7B-Instruct-v0.3 --judge-backend openai --judge-model gpt-5.2 --teacher-backend openai --teacher-model gpt-5.2
 python scripts/train_sft.py --model mistralai/Mistral-7B-Instruct-v0.3 --use-peft
 python scripts/train_dpo.py --model checkpoints/sft --use-peft
