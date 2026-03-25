@@ -1,0 +1,1 @@
+{"example_id":"lastfm-valid-001","task_type":"sequential","domain":"lastfm","user_id":"ul2","context":"Recent listens: Daft Punk, Justice, Kavinsky.","candidates":["Gesaffelstein","The Weeknd","Carpenter Brut","Phoenix","Deadmau5"],"ground_truth":["Gesaffelstein","Carpenter Brut"]}

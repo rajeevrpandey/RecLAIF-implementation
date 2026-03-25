@@ -1,0 +1,1 @@
+{"example_id":"esci-train-001","task_type":"retrieval","domain":"esci","user_id":"ue1","context":"Query: wireless noise cancelling earbuds","candidates":["Wireless ANC Earbuds","Wired Earbuds","Bluetooth Over-Ear Headphones","Phone Charging Cable","Earbud Replacement Tips"],"ground_truth":["Wireless ANC Earbuds","Bluetooth Over-Ear Headphones"]}

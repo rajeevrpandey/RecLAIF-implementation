@@ -56,15 +56,18 @@ def _parse_score_line(text: str, prefix: str) -> CriterionScore:
 
 
 def parse_judge_output(text: str) -> JudgeOutput:
-    option_a_relevance = _parse_score_line(text, "- Relevance Score")
-    first_diversity = _nth_score(text, "- Diversity Score", 1)
-    first_explainability = _nth_score(text, "- Explainability Score", 1)
-    second_relevance = _nth_score(text, "- Relevance Score", 2)
-    second_diversity = _nth_score(text, "- Diversity Score", 2)
-    second_explainability = _nth_score(text, "- Explainability Score", 2)
+    option_a_block, option_b_block = _extract_option_blocks(text)
+    option_a_relevance = _parse_score_line(option_a_block, "- Relevance Score")
+    first_diversity = _parse_score_line(option_a_block, "- Diversity Score")
+    first_explainability = _parse_score_line(option_a_block, "- Explainability Score")
+    second_relevance = _parse_score_line(option_b_block, "- Relevance Score")
+    second_diversity = _parse_score_line(option_b_block, "- Diversity Score")
+    second_explainability = _parse_score_line(option_b_block, "- Explainability Score")
 
     chosen_match = re.search(r"Chosen Option:\s*\[?([AB])\]?", text, re.IGNORECASE)
     reasoning_match = re.search(r"Reasoning:\s*(.+)", text, re.IGNORECASE | re.DOTALL)
+    option_a_total = _weighted_total(option_a_relevance, first_diversity, first_explainability)
+    option_b_total = _weighted_total(second_relevance, second_diversity, second_explainability)
 
     return JudgeOutput(
         option_a_relevance=option_a_relevance,
@@ -73,17 +76,28 @@ def parse_judge_output(text: str) -> JudgeOutput:
         option_b_relevance=second_relevance,
         option_b_diversity=second_diversity,
         option_b_explainability=second_explainability,
-        chosen_option=(chosen_match.group(1).upper() if chosen_match else "A"),
+        chosen_option=(chosen_match.group(1).upper() if chosen_match else None),
         reasoning=reasoning_match.group(1).strip() if reasoning_match else "",
         raw_text=text,
+        option_a_total=option_a_total,
+        option_b_total=option_b_total,
     )
 
 
-def _nth_score(text: str, prefix: str, occurrence: int) -> CriterionScore:
-    pattern = re.compile(rf"{re.escape(prefix)}\s*:\s*\[?(\d)\]?\s*-\s*(.+)", re.IGNORECASE)
-    matches = list(pattern.finditer(text))
-    if len(matches) >= occurrence:
-        match = matches[occurrence - 1]
-        return CriterionScore(score=int(match.group(1)), explanation=match.group(2).strip())
-    return CriterionScore(score=0, explanation="Could not parse score.")
+def _weighted_total(
+    relevance: CriterionScore,
+    diversity: CriterionScore,
+    explainability: CriterionScore,
+) -> float:
+    return 0.5 * relevance.score + 0.2 * diversity.score + 0.3 * explainability.score
 
+
+def _extract_option_blocks(text: str) -> tuple[str, str]:
+    pattern = re.compile(
+        r"Option A Evaluation:(.*?)Option B Evaluation:(.*?)(?:Decision:|$)",
+        re.IGNORECASE | re.DOTALL,
+    )
+    match = pattern.search(text)
+    if match:
+        return match.group(1), match.group(2)
+    return text, text

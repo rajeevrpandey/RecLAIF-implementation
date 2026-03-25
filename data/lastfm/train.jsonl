@@ -1,0 +1,1 @@
+{"example_id":"lastfm-train-001","task_type":"sequential","domain":"lastfm","user_id":"ul1","context":"Recent listens: Radiohead, Arcade Fire, The National.","candidates":["Interpol","Bon Iver","Taylor Swift","Foals","LCD Soundsystem"],"ground_truth":["Interpol","Foals"]}

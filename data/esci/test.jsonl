@@ -1,0 +1,1 @@
+{"example_id":"esci-test-001","task_type":"retrieval","domain":"esci","user_id":"ue3","context":"Query: ergonomic office chair lumbar support","candidates":["Ergonomic Office Chair","Gaming Chair","Lumbar Support Cushion","Standing Desk","Desk Foot Rest"],"ground_truth":["Ergonomic Office Chair","Lumbar Support Cushion"]}

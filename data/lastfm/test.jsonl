@@ -1,0 +1,1 @@
+{"example_id":"lastfm-test-001","task_type":"sequential","domain":"lastfm","user_id":"ul3","context":"Recent listens: Phoebe Bridgers, Julien Baker, Lucy Dacus.","candidates":["boygenius","Soccer Mommy","Fleetwood Mac","Big Thief","Mitski"],"ground_truth":["boygenius","Big Thief"]}

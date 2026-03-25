@@ -1,0 +1,1 @@
+{"example_id":"esci-valid-001","task_type":"retrieval","domain":"esci","user_id":"ue2","context":"Query: stainless steel water bottle","candidates":["32oz Stainless Steel Bottle","Glass Bottle","Insulated Travel Mug","Bottle Cleaning Brush","Plastic Water Bottle"],"ground_truth":["32oz Stainless Steel Bottle","Insulated Travel Mug"]}
