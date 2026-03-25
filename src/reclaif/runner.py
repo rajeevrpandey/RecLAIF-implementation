@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from reclaif.datasets import DatasetSplits, load_official_splits, materialize_candidates
+from reclaif.evaluation import evaluate_esci_retrieval, evaluate_sequential_recommendation
 from reclaif.experiment import ExperimentConfig
 from reclaif.io import write_jsonl
 from reclaif.llm import (
@@ -15,6 +16,7 @@ from reclaif.llm import (
     RecommenderClient,
 )
 from reclaif.pipeline import RecLaifPipeline, RecLaifPipelineConfig
+from reclaif.tracker import CSVExperimentTracker, TrackRow
 from reclaif.training import DPOTrainingConfig, SFTTrainingConfig, train_dpo_from_jsonl, train_sft_from_jsonl
 
 
@@ -58,6 +60,8 @@ def run_iterative_dpo(
     _set_seed(config.pipeline.seed)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    tracker = CSVExperimentTracker(output_dir / "metrics.csv")
+    run_id = f"{config.dataset}-seed{config.pipeline.seed}"
 
     splits = load_official_splits(dataset_root, config.dataset)
     prepared = _prepare_splits_with_policy(splits, config)
@@ -135,6 +139,14 @@ def run_iterative_dpo(
                 reference_checkpoint_path=current_model,
             )
         )
+        _log_iteration_metrics(
+            tracker=tracker,
+            run_id=run_id,
+            dataset=config.dataset,
+            pairs=pairs,
+            split_rows=train_rows,
+            iteration=iteration,
+        )
         current_model = next_model if not dry_run else f"{next_model}-dry-run"
 
     manifest = RunManifest(
@@ -148,6 +160,45 @@ def run_iterative_dpo(
     )
     (output_dir / "run_manifest.json").write_text(json.dumps(manifest.to_dict(), indent=2), encoding="utf-8")
     return manifest
+
+
+def _log_iteration_metrics(
+    *,
+    tracker: CSVExperimentTracker,
+    run_id: str,
+    dataset: str,
+    pairs: list,
+    split_rows: list,
+    iteration: int,
+) -> None:
+    if dataset == "esci":
+        result = evaluate_esci_retrieval(pairs, split_rows)
+        metric_rows = {
+            "precision_at_5": result.precision_at_5,
+            "ndcg_at_5": result.ndcg_at_5,
+            "explainability": result.explainability,
+        }
+    else:
+        result = evaluate_sequential_recommendation(pairs, split_rows)
+        metric_rows = {
+            "valid_ratio": result.valid_ratio,
+            "hit_at_1": result.hit_at_1,
+            "ndcg_at_3": result.ndcg_at_3,
+            "diversity": result.diversity,
+            "explainability": result.explainability,
+        }
+    for metric, value in metric_rows.items():
+        tracker.log(
+            TrackRow(
+                run_id=run_id,
+                dataset=dataset,
+                split="train",
+                stage="dpo",
+                iteration=iteration,
+                metric=metric,
+                value=float(value),
+            )
+        )
 
 
 def _prepare_splits_with_policy(splits: DatasetSplits, config: ExperimentConfig) -> DatasetSplits:

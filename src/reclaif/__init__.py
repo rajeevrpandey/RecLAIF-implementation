@@ -13,4 +13,5 @@ __all__ = [
     "runner",
     "schemas",
     "training",
+    "tracker",
 ]

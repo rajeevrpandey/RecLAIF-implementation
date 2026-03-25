@@ -32,8 +32,10 @@ configs/
 data/
   beauty_sample.jsonl
 scripts/
+  benchmark_report.py
   evaluate_pairs.py
   prepare_dataset_splits.py
+  run_benchmarks.py
   run_iterative_dpo.py
   run_mock_pipeline.py
   run_pipeline.py
@@ -53,6 +55,7 @@ src/reclaif/
   runner.py
   schemas.py
   training.py
+  tracker.py
 ```
 
 ## What Is Implemented
@@ -147,6 +150,27 @@ CLI entrypoint `scripts/run_iterative_dpo.py`:
   - version-locked model IDs and sampling/training hyperparameters from config
   - reference-model handling for DPO (`reference_model_name_or_path`)
 
+### 9. Full metric package + table reproduction (Priority C)
+
+Dataset-specific evaluation helpers are now available:
+
+- ESCI retrieval metrics: `Prec@5`, `NDCG@5`, explainability
+- Beauty/LastFM metrics: `ValidRatio`, `Hit@1`, `NDCG@3`, diversity, explainability
+
+Paper-style reporting scripts:
+
+- `scripts/benchmark_report.py`
+  - `table2_esci.csv`
+  - `table3_beauty_lastfm.csv`
+  - `dpo_iteration_ablation.csv`
+
+### 10. Reporting discipline (Priority D)
+
+- CSV experiment tracking is built into the iterative runner via `src/reclaif/tracker.py`
+  and writes `metrics.csv` next to each run.
+- One-command benchmark orchestration:
+  - `scripts/run_benchmarks.py` runs all dataset configs and emits paper-style tables.
+
 The repo now includes:
 
 - hosted inference clients in [`src/reclaif/llm.py`](/C:/Users/rrpte/Documents/New%20project/src/reclaif/llm.py)
@@ -196,6 +220,7 @@ The trainer code assumes the standard TRL dataset shapes:
 python scripts/show_experiment_config.py --config configs/experiments/beauty.v1.json
 python scripts/prepare_dataset_splits.py --dataset-root data --dataset beauty --output-dir prepared_data --policy random_from_catalog --k 50 --seed 7
 python scripts/run_iterative_dpo.py --config configs/experiments/beauty.v1.json --dataset-root data --output-dir runs/beauty --dry-run
+python scripts/run_benchmarks.py --dataset-root data --runs-root runs --reports-dir reports --dry-run
 python scripts/run_pipeline.py --recommender-backend transformers --recommender-model mistralai/Mistral-7B-Instruct-v0.3 --judge-backend openai --judge-model gpt-5.2 --teacher-backend openai --teacher-model gpt-5.2
 python scripts/train_sft.py --model mistralai/Mistral-7B-Instruct-v0.3 --use-peft
 python scripts/train_dpo.py --model checkpoints/sft --use-peft
