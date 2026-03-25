@@ -1,0 +1,29 @@
+{
+  "dataset": "lastfm",
+  "models": {
+    "recommender_model": "mistralai/Mistral-7B-Instruct-v0.3",
+    "judge_model": "claude-3-sonnet-20240229",
+    "teacher_model": "claude-3-sonnet-20240229"
+  },
+  "prompts": {
+    "version": "v1"
+  },
+  "pipeline": {
+    "top_k": 3,
+    "iterations": 4,
+    "temperature": 1.0,
+    "top_p": 0.9,
+    "seed": 7
+  },
+  "candidate_sampling": {
+    "policy": "random_from_catalog",
+    "k": 100,
+    "seed": 7,
+    "include_ground_truth": true
+  },
+  "training": {
+    "dpo_beta": 0.1,
+    "sft_epochs": 1.0,
+    "dpo_epochs": 1.0
+  }
+}

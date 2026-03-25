@@ -31,6 +31,7 @@ class CommonTrainingConfig:
     lora_dropout: float = 0.05
     target_modules: tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
     resume_from_checkpoint: str | None = None
+    seed: int = 7
 
 
 @dataclass(slots=True)
@@ -43,6 +44,7 @@ class DPOTrainingConfig(CommonTrainingConfig):
     train_jsonl: Path = Path("artifacts/preference_pairs.jsonl")
     beta: float = 0.1
     max_prompt_length: int = 768
+    reference_model_name_or_path: str | None = None
 
 
 def train_sft_from_jsonl(config: SFTTrainingConfig) -> str:
@@ -70,6 +72,7 @@ def train_sft_from_jsonl(config: SFTTrainingConfig) -> str:
         max_length=config.max_length,
         report_to=[] if config.report_to == "none" else [config.report_to],
         completion_only_loss=True,
+        seed=config.seed,
     )
 
     trainer = trl.SFTTrainer(
@@ -93,6 +96,13 @@ def train_dpo_from_jsonl(config: DPOTrainingConfig) -> str:
         attn_implementation=config.attn_implementation,
     )
     dataset = _build_dpo_dataset(config.train_jsonl, datasets)
+    ref_model = None
+    if config.reference_model_name_or_path:
+        _, ref_model = _load_tokenizer_and_model(
+            model_name_or_path=config.reference_model_name_or_path,
+            trust_remote_code=config.trust_remote_code,
+            attn_implementation=config.attn_implementation,
+        )
     peft_config = _build_peft_config(config, peft) if config.use_peft else None
 
     args = trl.DPOConfig(
@@ -110,10 +120,12 @@ def train_dpo_from_jsonl(config: DPOTrainingConfig) -> str:
         max_length=config.max_length,
         beta=config.beta,
         report_to=[] if config.report_to == "none" else [config.report_to],
+        seed=config.seed,
     )
 
     trainer = trl.DPOTrainer(
         model=model,
+        ref_model=ref_model,
         args=args,
         train_dataset=dataset,
         processing_class=tokenizer,

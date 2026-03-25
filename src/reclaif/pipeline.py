@@ -76,8 +76,12 @@ class RecLaifPipeline:
             judge_response = self.judge.evaluate(judge_prompt)
             parsed = parse_judge_output(judge_response)
 
-            chosen = option_a if parsed.chosen_option == "A" else option_b
-            rejected = option_b if parsed.chosen_option == "A" else option_a
+            chosen_option = parsed.chosen_option
+            if chosen_option is None:
+                chosen_option = "A" if parsed.option_a_total >= parsed.option_b_total else "B"
+
+            chosen = option_a if chosen_option == "A" else option_b
+            rejected = option_b if chosen_option == "A" else option_a
 
             pairs.append(
                 PreferencePair(

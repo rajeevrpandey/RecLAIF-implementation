@@ -32,23 +32,47 @@ configs/
 data/
   beauty_sample.jsonl
 scripts/
+  benchmark_report.py
+  evaluate_pairs.py
+  prepare_dataset_splits.py
+  run_benchmarks.py
+  run_iterative_dpo.py
   run_mock_pipeline.py
   run_pipeline.py
+  show_experiment_config.py
   train_sft.py
   train_dpo.py
 src/reclaif/
   __init__.py
+  datasets.py
+  experiment.py
   io.py
   llm.py
   metrics.py
   parsers.py
   pipeline.py
   prompts.py
+  runner.py
   schemas.py
   training.py
+  tracker.py
 ```
 
 ## What Is Implemented
+
+### 0. Reproducibility foundation (Priority A)
+
+The repo now includes first-class building blocks to lock and replay experiments:
+
+- dataset split adapters for `esci`, `beauty`, and `lastfm` with canonical split file names
+  (`train.jsonl`, `valid.jsonl`, `test.jsonl`)
+- deterministic candidate generation policy (`given` or `random_from_catalog`) with seed control
+- version-locked experiment configs in `configs/experiments/*.json` for
+  - model IDs (recommender/judge/teacher)
+  - prompt version
+  - generation params (`temperature`, `top_p`)
+  - DPO/SFT hyperparameters (`beta`, epochs)
+  - random seed
 
 ### 1. Recommendation prompt generation
 
@@ -74,6 +98,8 @@ The repo includes lightweight parsers for:
 
 - recommender outputs
 - judge outputs
+- weighted judge score aggregation (relevance/diversity/explainability) to recover a
+  stable winner when `Chosen Option` is omitted
 
 This makes the system usable even before moving to strict JSON outputs.
 
@@ -99,7 +125,51 @@ That lets us later plug in:
 - a custom trainer
 - OpenAI or Bedrock-based data generation
 
-### 6. Real backends and actual training
+### 6. Offline evaluation helper
+
+The repo now includes a lightweight evaluator for generated preference pairs:
+
+- script: `scripts/evaluate_pairs.py`
+- metrics: `Precision@3`, `Hit@1`, `NDCG@3`, `ValidRatio@3`, lexical diversity
+- input: `data/*.jsonl` plus `artifacts/preference_pairs.jsonl`
+- output: JSON summary so you can compare iterations quickly
+
+### 7. Real backends and actual training
+
+### 8. Automated Iter1..Iter4 loop with lineage (Priority B)
+
+The repo includes an automated iterative runner in `src/reclaif/runner.py` and
+CLI entrypoint `scripts/run_iterative_dpo.py`:
+
+- Iter0: teacher-driven SFT data generation and optional SFT training
+- Iter1..IterN: preference pair generation + optional DPO training
+- explicit checkpoint lineage written to `run_manifest.json`
+- deterministic run controls:
+  - seed propagation
+  - fixed prompt version from experiment config
+  - version-locked model IDs and sampling/training hyperparameters from config
+  - reference-model handling for DPO (`reference_model_name_or_path`)
+
+### 9. Full metric package + table reproduction (Priority C)
+
+Dataset-specific evaluation helpers are now available:
+
+- ESCI retrieval metrics: `Prec@5`, `NDCG@5`, explainability
+- Beauty/LastFM metrics: `ValidRatio`, `Hit@1`, `NDCG@3`, diversity, explainability
+
+Paper-style reporting scripts:
+
+- `scripts/benchmark_report.py`
+  - `table2_esci.csv`
+  - `table3_beauty_lastfm.csv`
+  - `dpo_iteration_ablation.csv`
+
+### 10. Reporting discipline (Priority D)
+
+- CSV experiment tracking is built into the iterative runner via `src/reclaif/tracker.py`
+  and writes `metrics.csv` next to each run.
+- One-command benchmark orchestration:
+  - `scripts/run_benchmarks.py` runs all dataset configs and emits paper-style tables.
 
 The repo now includes:
 
@@ -147,6 +217,10 @@ The trainer code assumes the standard TRL dataset shapes:
 ### Example commands
 
 ```bash
+python scripts/show_experiment_config.py --config configs/experiments/beauty.v1.json
+python scripts/prepare_dataset_splits.py --dataset-root data --dataset beauty --output-dir prepared_data --policy random_from_catalog --k 50 --seed 7
+python scripts/run_iterative_dpo.py --config configs/experiments/beauty.v1.json --dataset-root data --output-dir runs/beauty --dry-run
+python scripts/run_benchmarks.py --dataset-root data --runs-root runs --reports-dir reports --dry-run
 python scripts/run_pipeline.py --recommender-backend transformers --recommender-model mistralai/Mistral-7B-Instruct-v0.3 --judge-backend openai --judge-model gpt-5.2 --teacher-backend openai --teacher-model gpt-5.2
 python scripts/train_sft.py --model mistralai/Mistral-7B-Instruct-v0.3 --use-peft
 python scripts/train_dpo.py --model checkpoints/sft --use-peft
@@ -157,6 +231,7 @@ python scripts/train_dpo.py --model checkpoints/sft --use-peft
 Install the extras that match the path you want:
 
 ```bash
+pip install -r requirements.txt
 pip install -e .[hosted]
 pip install -e .[train]
 pip install -e .[full]

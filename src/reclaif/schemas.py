@@ -61,9 +61,11 @@ class JudgeOutput:
     option_b_relevance: CriterionScore
     option_b_diversity: CriterionScore
     option_b_explainability: CriterionScore
-    chosen_option: Literal["A", "B"]
+    chosen_option: Literal["A", "B"] | None
     reasoning: str
     raw_text: str
+    option_a_total: float
+    option_b_total: float
 
     def to_dict(self) -> dict:
         payload = asdict(self)
@@ -92,4 +94,3 @@ class PreferencePair:
 
     def to_dict(self) -> dict:
         return asdict(self)
-
