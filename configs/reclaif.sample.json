@@ -1,0 +1,9 @@
+{
+  "top_k": 3,
+  "temperature": 1.0,
+  "top_p": 0.9,
+  "iterations": 2,
+  "output_dir": "artifacts",
+  "domain": "beauty"
+}
+

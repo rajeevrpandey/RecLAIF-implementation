@@ -1,0 +1,9 @@
+artifacts/
+artifacts_real/
+build/
+checkpoints/
+.tools/
+.venv/
+*.egg-info/
+__pycache__/
+*.pyc
